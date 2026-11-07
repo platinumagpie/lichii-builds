@@ -548,13 +548,22 @@ function Get-AppUrls {
     $branch = [string](Get-Prop $Config 'AppBranch')
     if (-not $branch) { $branch = 'main' }
     $u = @{
-        Version = "https://raw.githubusercontent.com/$repo/$branch/VERSION"
-        Notes   = "https://raw.githubusercontent.com/$repo/$branch/NOTES.txt"
+        Version = ''      # empty = read through the GitHub API (raw.githubusercontent.com can serve a stale copy for minutes)
+        Notes   = ''
         Zip     = "https://codeload.github.com/$repo/zip/refs/heads/$branch"
         Page    = "https://github.com/$repo"
+        Branch  = $branch
+        Repo    = $repo
     }
     foreach ($k in 'Version', 'Notes', 'Zip') { $o = Get-Prop $Config ("App{0}Url" -f $k); if ($o) { $u[$k] = [string]$o } }
     return $u
+}
+
+function Get-AppFile($U, [string]$Which, [string]$File) {
+    if ($U[$Which]) { return (Get-Text $U[$Which]) }
+    $j = Get-Api ('/repos/{0}/contents/{1}?ref={2}' -f $U.Repo, $File, [Uri]::EscapeDataString($U.Branch))
+    $b64 = ([string]$j.content) -replace '\s', ''
+    return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($b64))
 }
 
 function Update-AppInfo($State) {
@@ -562,13 +571,13 @@ function Update-AppInfo($State) {
     if (-not $repo) { return }
     try {
         $u = Get-AppUrls
-        $latestText = (Get-Text $u.Version).Trim()
+        $latestText = (Get-AppFile $u 'Version' 'VERSION').Trim()
         $latest = ConvertTo-AppVersion $latestText
         if (-not $latest) { throw "VERSION on GitHub isn't a version number ('$latestText')" }
         $cur = ConvertTo-AppVersion $AppVersion
         if (-not $cur) { $cur = [version]'0.0.0' }
         $notes = ''
-        try { $notes = (Get-Text $u.Notes).Trim() } catch {}
+        try { $notes = (Get-AppFile $u 'Notes' 'NOTES.txt').Trim() } catch {}
         if ($notes.Length -gt 600) { $notes = $notes.Substring(0, 600) + '...' }
         $info = [pscustomobject]@{
             Version = $AppVersion; Repo = $repo; LastChecked = (Get-Date).ToString('s')
