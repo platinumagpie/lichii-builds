@@ -541,40 +541,42 @@ function ConvertTo-AppVersion([string]$Tag) {
     return $null
 }
 
-# Looks at the app's own GitHub repo (AppRepo in config.json) and records what's there in state.json (_app).
+# Looks at the app's own GitHub repo (AppRepo in config.json): the VERSION file on its main branch
+# says which version is current, NOTES.txt says what changed. Records it in state.json (_app).
+function Get-AppUrls {
+    $repo = [string](Get-Prop $Config 'AppRepo')
+    $branch = [string](Get-Prop $Config 'AppBranch')
+    if (-not $branch) { $branch = 'main' }
+    $u = @{
+        Version = "https://raw.githubusercontent.com/$repo/$branch/VERSION"
+        Notes   = "https://raw.githubusercontent.com/$repo/$branch/NOTES.txt"
+        Zip     = "https://codeload.github.com/$repo/zip/refs/heads/$branch"
+        Page    = "https://github.com/$repo"
+    }
+    foreach ($k in 'Version', 'Notes', 'Zip') { $o = Get-Prop $Config ("App{0}Url" -f $k); if ($o) { $u[$k] = [string]$o } }
+    return $u
+}
+
 function Update-AppInfo($State) {
     $repo = [string](Get-Prop $Config 'AppRepo')
     if (-not $repo) { return }
     try {
-        $best = $null
-        foreach ($r in @((Get-Api "/repos/$repo/releases?per_page=5") | ForEach-Object { $_ })) {
-            if ($null -eq $r -or $r.draft) { continue }
-            $v = ConvertTo-AppVersion $r.tag_name
-            if (-not $v) { continue }
-            $a = @($r.assets) | Where-Object { $_ -and $_.name -match '^Lichii[- ]Builds.*\.zip$' } | Select-Object -First 1
-            if (-not $a) { continue }
-            if (-not $best -or $v -gt $best.V) { $best = [pscustomobject]@{ V = $v; R = $r; A = $a } }
-        }
+        $u = Get-AppUrls
+        $latestText = (Get-Text $u.Version).Trim()
+        $latest = ConvertTo-AppVersion $latestText
+        if (-not $latest) { throw "VERSION on GitHub isn't a version number ('$latestText')" }
         $cur = ConvertTo-AppVersion $AppVersion
         if (-not $cur) { $cur = [version]'0.0.0' }
+        $notes = ''
+        try { $notes = (Get-Text $u.Notes).Trim() } catch {}
+        if ($notes.Length -gt 600) { $notes = $notes.Substring(0, 600) + '...' }
         $info = [pscustomobject]@{
-            Version = $AppVersion; Repo = $repo; LastChecked = (Get-Date).ToString('s'); UpdateAvailable = $false
-            LatestVersion = $AppVersion; LatestUrl = ''; Notes = ''; AssetUrl = ''; AssetName = ''; AssetSize = 0; AssetDigest = ''
+            Version = $AppVersion; Repo = $repo; LastChecked = (Get-Date).ToString('s')
+            LatestVersion = $latest.ToString(); UpdateAvailable = ($latest -gt $cur); LatestUrl = $u.Page; Notes = $notes
+            AssetUrl = $u.Zip; AssetName = 'lichii-builds.zip'; AssetSize = 0; AssetDigest = ''
         }
-        if ($best) {
-            $info.LatestVersion = $best.V.ToString()
-            $info.LatestUrl = [string]$best.R.html_url
-            $notes = [string]$best.R.body
-            if ($notes.Length -gt 600) { $notes = $notes.Substring(0, 600) + '...' }
-            $info.Notes = $notes
-            $info.AssetUrl = [string]$best.A.browser_download_url
-            $info.AssetName = [string]$best.A.name
-            $info.AssetSize = $best.A.size
-            $info.AssetDigest = [string](Get-Prop $best.A 'digest')
-            $info.UpdateAvailable = ($best.V -gt $cur)
-            if ($info.UpdateAvailable -and (Get-Prop (Get-Prop $State '_app') 'LatestVersion') -ne $info.LatestVersion) {
-                Write-Log "Lichii Builds $($info.LatestVersion) is out (you have $AppVersion)"
-            }
+        if ($info.UpdateAvailable -and (Get-Prop (Get-Prop $State '_app') 'LatestVersion') -ne $info.LatestVersion) {
+            Write-Log "Lichii Builds $($info.LatestVersion) is out (you have $AppVersion)"
         }
         Set-SourceState $State '_app' $info
     } catch { Write-Log "Couldn't check for Lichii Builds updates: $($_.Exception.Message)" }
@@ -599,6 +601,9 @@ function Invoke-AppUpdate($State) {
         $tray = Get-ChildItem -LiteralPath $tmp -Recurse -Filter 'LichiiTray.ps1' -File | Select-Object -First 1
         if (-not $tray) { throw "the update zip doesn't contain the app" }
         $newRoot = $tray.DirectoryName
+        $gotV = ''
+        try { $gotV = (Get-Content -LiteralPath (Join-Path $newRoot 'VERSION') -Raw).Trim() } catch {}
+        if ((ConvertTo-AppVersion $gotV) -ne (ConvertTo-AppVersion $app.LatestVersion)) { throw "the download is version '$gotV', expected $($app.LatestVersion); try again in a few minutes" }
 
         $bk = Join-Path (Join-Path $ScriptDir 'old versions') (Get-SafeName $AppVersion)
         if (Test-Path -LiteralPath $bk) { $bk = '{0}-{1}' -f $bk, (Get-Date -Format 'yyyyMMdd-HHmmss') }
