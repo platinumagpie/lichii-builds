@@ -1,0 +1,8 @@
+config.json
+state.json
+tray.json
+log.txt
+progress.json
+preview/
+old versions/
+*.flag

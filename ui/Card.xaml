@@ -1,0 +1,68 @@
+<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        CornerRadius="8" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+        Padding="14,12,14,12" Margin="0,0,0,8">
+    <StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="@@LABEL@@" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                <TextBlock Text="@@REPO@@" FontSize="11.5" Foreground="{DynamicResource TextDim}" Margin="0,1,0,0"/>
+            </StackPanel>
+            <Border Grid.Column="1" CornerRadius="10" Padding="9,3" Background="@@BADGEBG@@" VerticalAlignment="Top">
+                <TextBlock Text="@@BADGE@@" FontSize="11.5" FontWeight="SemiBold" Foreground="@@BADGEFG@@"/>
+            </Border>
+        </Grid>
+
+        <Grid Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="INSTALLED" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}"/>
+                <TextBlock Text="@@INST@@" FontSize="13" Foreground="{DynamicResource Text}" Margin="0,3,8,0" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="@@INSTSUB@@" FontSize="11.5" Foreground="{DynamicResource TextDim}" Margin="0,1,8,0" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="ON GITHUB" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}"/>
+                <TextBlock Text="@@LATEST@@" FontSize="13" Foreground="@@LATESTFG@@" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="@@LATESTSUB@@" FontSize="11.5" Foreground="{DynamicResource TextDim}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Visibility="@@NOTEVIS@@" Margin="0,12,0,0" CornerRadius="6" Padding="10,7" Background="@@NOTEBG@@">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="@@NOTEGLYPH@@" FontFamily="{DynamicResource Icons}" FontSize="12" Foreground="@@NOTEFG@@"
+                           VerticalAlignment="Top" Margin="0,2,8,0"/>
+                <TextBlock Text="@@NOTE@@" FontSize="12" Foreground="{DynamicResource TextSub}" TextWrapping="Wrap" MaxWidth="300"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Visibility="@@ACTVIS@@" Orientation="Horizontal" Margin="0,12,0,0">
+            <Button x:Name="BtnDownload" Style="{DynamicResource AccentButton}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE896;" FontFamily="{DynamicResource Icons}" FontSize="13" VerticalAlignment="Center"/>
+                    <TextBlock Text="@@DLTEXT@@" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="BtnNotes" Style="{DynamicResource LinkButton}" Margin="6,0,0,0" Visibility="@@NOTESVIS@@">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Release notes" VerticalAlignment="Center"/>
+                    <TextBlock Text="&#xE8A7;" FontFamily="{DynamicResource Icons}" FontSize="10" Margin="6,1,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <StackPanel Visibility="@@PROGVIS@@" Margin="0,12,0,0">
+            <Grid>
+                <TextBlock x:Name="Phase" Text="@@PHASE@@" FontSize="12" Foreground="{DynamicResource TextSub}"/>
+                <TextBlock x:Name="Pct" Text="@@PCT@@" FontSize="12" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right"/>
+            </Grid>
+            <ProgressBar x:Name="Bar" Style="{DynamicResource SlimBar}" Value="@@PCTVAL@@" Margin="0,7,0,0"/>
+        </StackPanel>
+    </StackPanel>
+</Border>

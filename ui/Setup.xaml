@@ -1,0 +1,218 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lichii Builds setup" Width="592" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="True" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType">
+
+    <Border x:Name="Shell" Margin="16" CornerRadius="12" Background="{DynamicResource Surface}"
+            BorderBrush="{DynamicResource SurfaceLine}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="8" Direction="270" Opacity="0.55" Color="#000000"/>
+        </Border.Effect>
+        <StackPanel>
+
+            <!-- header (drag to move) -->
+            <Grid x:Name="TitleBar" Margin="22,20,14,8" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="44" Height="44" CornerRadius="11" Background="{DynamicResource LogoBrush}" VerticalAlignment="Top">
+                    <TextBlock Text="L" FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="25" FontWeight="Bold"
+                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,-2,0,0"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="14,0,8,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="HeaderText" Text="Set up Lichii Builds" FontFamily="Segoe UI Variable Display, Segoe UI"
+                               FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                    <TextBlock Text="Pick which builds to watch and where they go. It checks GitHub on its own and asks before downloading anything."
+                               FontSize="12.5" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                </StackPanel>
+                <Button x:Name="CloseBtn" Grid.Column="2" Style="{DynamicResource GhostButton}" Padding="8" VerticalAlignment="Top" ToolTip="Close">
+                    <TextBlock Text="&#xE711;" FontFamily="{DynamicResource Icons}" FontSize="10"/>
+                </Button>
+            </Grid>
+
+            <StackPanel Margin="22,8,22,0">
+
+                <TextBlock Text="BUILDS TO WATCH" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}" Margin="2,6,0,8"/>
+
+                <!-- Frizti -->
+                <Border CornerRadius="8" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}" BorderThickness="1" Padding="14,12" Margin="0,0,0,8">
+                    <StackPanel>
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Frizti" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                                <TextBlock Text="github.com/Frizti/Fritchii" FontSize="11.5" Foreground="{DynamicResource TextDim}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <CheckBox x:Name="UseFrizti" Style="{DynamicResource Toggle}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="True"/>
+                        </Grid>
+                        <Grid x:Name="FriztiRow" Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE838;" FontFamily="{DynamicResource Icons}" FontSize="13" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="FriztiPath" Grid.Column="1" Text="path" Foreground="{DynamicResource TextSub}" Margin="8,0,8,0"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <Button x:Name="FriztiChange" Grid.Column="2" Style="{DynamicResource SubtleButton}" Padding="12,5" Content="Change"/>
+                        </Grid>
+                        <StackPanel x:Name="FriztiTests" Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Get" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" Width="34"/>
+                            <RadioButton x:Name="FriztiTRel" GroupName="FriztiT" Style="{DynamicResource Segment}" Content="Releases" IsChecked="True"
+                                         ToolTip="Only real releases"/>
+                            <RadioButton x:Name="FriztiTMain" GroupName="FriztiT" Style="{DynamicResource Segment}" Content="+ Test builds"
+                                         ToolTip="Also unreleased test builds from the repo's main branch (needs a GitHub token)"/>
+                            <RadioButton x:Name="FriztiTAll" GroupName="FriztiT" Style="{DynamicResource Segment}" Content="+ Experimental"
+                                         ToolTip="Test builds from every branch, including experiments (needs a GitHub token)"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Main -->
+                <Border CornerRadius="8" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}" BorderThickness="1" Padding="14,12" Margin="0,0,0,8">
+                    <StackPanel>
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Main" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                                <TextBlock Text="github.com/zortos293/Lichii" FontSize="11.5" Foreground="{DynamicResource TextDim}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <CheckBox x:Name="UseMain" Style="{DynamicResource Toggle}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="True"/>
+                        </Grid>
+                        <Grid x:Name="MainRow" Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE838;" FontFamily="{DynamicResource Icons}" FontSize="13" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="MainPath" Grid.Column="1" Text="path" Foreground="{DynamicResource TextSub}" Margin="8,0,8,0"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <Button x:Name="MainChange" Grid.Column="2" Style="{DynamicResource SubtleButton}" Padding="12,5" Content="Change"/>
+                        </Grid>
+                        <StackPanel x:Name="MainTests" Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Get" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" Width="34"/>
+                            <RadioButton x:Name="MainTRel" GroupName="MainT" Style="{DynamicResource Segment}" Content="Releases" IsChecked="True"
+                                         ToolTip="Only real releases"/>
+                            <RadioButton x:Name="MainTMain" GroupName="MainT" Style="{DynamicResource Segment}" Content="+ Test builds"
+                                         ToolTip="Also unreleased test builds from the repo's main branch (needs a GitHub token)"/>
+                            <RadioButton x:Name="MainTAll" GroupName="MainT" Style="{DynamicResource Segment}" Content="+ Experimental"
+                                         ToolTip="Test builds from every branch, including experiments (needs a GitHub token)"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- any other repo -->
+                <Border CornerRadius="8" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}" BorderThickness="1" Padding="14,12" Margin="0,0,0,4">
+                    <StackPanel>
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Another repo" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                                <TextBlock Text="Any other Lichii fork on GitHub" FontSize="11.5" Foreground="{DynamicResource TextDim}" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <CheckBox x:Name="UseCustom" Style="{DynamicResource Toggle}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <StackPanel x:Name="CustomRow" Margin="0,10,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="github.com/" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBox x:Name="CustomRepo" Grid.Column="1" Style="{DynamicResource DarkText}" Text="owner/repo"/>
+                            </Grid>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="&#xE838;" FontFamily="{DynamicResource Icons}" FontSize="13" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="CustomPath" Grid.Column="1" Text="path" Foreground="{DynamicResource TextSub}" Margin="8,0,8,0"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <Button x:Name="CustomChange" Grid.Column="2" Style="{DynamicResource SubtleButton}" Padding="12,5" Content="Change"/>
+                            </Grid>
+                            <StackPanel x:Name="CustomTests" Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock Text="Get" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" Width="34"/>
+                                <RadioButton x:Name="CustomTRel" GroupName="CustomT" Style="{DynamicResource Segment}" Content="Releases" IsChecked="True"
+                                             ToolTip="Only real releases"/>
+                                <RadioButton x:Name="CustomTMain" GroupName="CustomT" Style="{DynamicResource Segment}" Content="+ Test builds"
+                                             ToolTip="Also unreleased test builds from the repo's main branch (needs a GitHub token)"/>
+                                <RadioButton x:Name="CustomTAll" GroupName="CustomT" Style="{DynamicResource Segment}" Content="+ Experimental"
+                                             ToolTip="Test builds from every branch, including experiments (needs a GitHub token)"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="Already have Lichii somewhere? Hit Change and pick that folder. The first check offers the newest build for it."
+                           FontSize="11.5" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" Margin="2,4,0,0"/>
+
+                <TextBlock Text="OLD BUILDS GO TO" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}" Margin="2,18,0,8"/>
+                <Border CornerRadius="8" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}" BorderThickness="1" Padding="14,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE7B8;" FontFamily="{DynamicResource Icons}" FontSize="13" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="ArchivePath" Grid.Column="1" Text="path" Foreground="{DynamicResource TextSub}" Margin="8,0,8,0"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <Button x:Name="ArchiveChange" Grid.Column="2" Style="{DynamicResource SubtleButton}" Padding="12,5" Content="Change"/>
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="GITHUB TOKEN (ONLY NEEDED FOR TEST BUILDS)" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}" Margin="2,18,0,8"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="Token" Style="{DynamicResource DarkText}" FontFamily="Consolas" FontSize="12"/>
+                    <Button x:Name="TokenLink" Grid.Column="1" Style="{DynamicResource LinkButton}" Margin="6,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Get a free token" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#xE8A7;" FontFamily="{DynamicResource Icons}" FontSize="10" Margin="6,1,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <TextBlock Text="Stays on this PC, in config.json. A token with no boxes ticked should be enough (not confirmed yet)."
+                           FontSize="11.5" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" Margin="2,6,0,0"/>
+
+                <TextBlock Text="CHECK GITHUB EVERY" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}" Margin="2,18,0,8"/>
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="Every15" Style="{DynamicResource Segment}" GroupName="Every" Content="15 min"/>
+                        <RadioButton x:Name="Every30" Style="{DynamicResource Segment}" GroupName="Every" Content="30 min" IsChecked="True"/>
+                        <RadioButton x:Name="Every60" Style="{DynamicResource Segment}" GroupName="Every" Content="1 hour"/>
+                    </StackPanel>
+                    <CheckBox x:Name="StartWithWindows" Style="{DynamicResource Toggle}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                              IsChecked="True" Content="Start with Windows"/>
+                </Grid>
+
+                <Border x:Name="ErrorBox" Visibility="Collapsed" Margin="0,16,0,0" CornerRadius="6" Padding="10,8" Background="#1AFF99A4">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Icons}" FontSize="12" Foreground="#FF99A4" Margin="0,2,8,0" VerticalAlignment="Top"/>
+                        <TextBlock x:Name="ErrorText" Text="" FontSize="12.5" Foreground="{DynamicResource Text}" TextWrapping="Wrap" MaxWidth="480"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- footer -->
+            <Border Height="1" Background="#14FFFFFF" Margin="0,20,0,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="22,14,22,18">
+                <Button x:Name="CancelBtn" Style="{DynamicResource SubtleButton}" Content="Cancel" MinWidth="96"/>
+                <Button x:Name="SaveBtn" Style="{DynamicResource AccentButton}" Margin="8,0,0,0" MinWidth="130">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE73E;" FontFamily="{DynamicResource Icons}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SaveLabel" Text="Save and start" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
