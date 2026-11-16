@@ -6,7 +6,7 @@
     state.json. A build is only downloaded when AutoInstall is on for that
     repo, or when you ask for it (-InstallSource, which the tray app uses).
     Installing puts each repo's build in its OWN folder, carries your user
-    data over and moves the old build into ARCHIVE, so a "main" build can
+    data over and moves the old build into the old builds folder (ArchiveFolder), so a "main" build can
     never replace the Frizti build.
 
     The tray app (LichiiTray.ps1) runs this every 30 minutes and asks you
@@ -488,7 +488,7 @@ function Install-Build($Src, $Build, [string]$InstallDir, [string]$ArchiveDir, $
         }
         if (-not (Find-Exe $root $exeNames)) { throw "the new zip has no $($exeNames -join ' / ') in it, so it wasn't installed" }
 
-        # Old build -> ARCHIVE (one rename; fails cleanly if anything in it is still open)
+        # Old build -> old builds folder (one rename; fails cleanly if anything in it is still open)
         Set-Progress $Src.Name 'Installing'
         if (Test-Path -LiteralPath $InstallDir) {
             $oldTag = Get-Prop (Get-Prop $State $Src.Name) 'Tag'
@@ -661,7 +661,7 @@ $Config = Get-Config
 if ($Uninstall) { Unregister-CheckerTask; exit 0 }
 
 $ArchiveDir = Resolve-PathSetting (Get-Prop $Config 'ArchiveFolder')
-if (-not $ArchiveDir) { $ArchiveDir = Resolve-PathSetting '%DESKTOP%\ARCHIVE\Lichii' }
+if (-not $ArchiveDir) { $ArchiveDir = Resolve-PathSetting '%DESKTOP%\Lichii Builds\Old builds' }
 
 $Sources = @()
 foreach ($s in @($Config.Sources)) {
@@ -674,7 +674,7 @@ $problems = @()
 for ($i = 0; $i -lt $Sources.Count; $i++) {
     $a = $Sources[$i]
     if (-not $a.Src.Name -or -not $a.Src.Repo -or -not $a.Dir) { $problems += "a source is missing Name, Repo or InstallFolder" }
-    if ((Test-PathInside $ArchiveDir $a.Dir) -or (Test-PathInside $a.Dir $ArchiveDir)) { $problems += "'$($a.Src.Name)' InstallFolder overlaps the ARCHIVE folder" }
+    if ((Test-PathInside $ArchiveDir $a.Dir) -or (Test-PathInside $a.Dir $ArchiveDir)) { $problems += "'$($a.Src.Name)' InstallFolder overlaps the old builds folder (ArchiveFolder)" }
     if (Test-PathInside $ScriptDir $a.Dir) { $problems += "'$($a.Src.Name)' InstallFolder contains the checker itself" }
     $userHome = [Environment]::GetFolderPath('UserProfile')
     $desk = [Environment]::GetFolderPath('Desktop')
@@ -687,7 +687,7 @@ for ($i = 0; $i -lt $Sources.Count; $i++) {
         $m = Resolve-PathSetting $mf
         if (-not $m) { continue }
         if ((Test-PathInside $m $a.Dir) -or (Test-PathInside $a.Dir $m)) { $problems += "'$($a.Src.Name)' MoveFrom overlaps its own InstallFolder" }
-        if ((Test-PathInside $m $ArchiveDir) -or (Test-PathInside $ArchiveDir $m)) { $problems += "'$($a.Src.Name)' MoveFrom overlaps the ARCHIVE folder" }
+        if ((Test-PathInside $m $ArchiveDir) -or (Test-PathInside $ArchiveDir $m)) { $problems += "'$($a.Src.Name)' MoveFrom overlaps the old builds folder (ArchiveFolder)" }
         foreach ($o in $Sources) {
             if ($o -eq $a) { continue }
             if ((Test-PathInside $m $o.Dir) -or (Test-PathInside $o.Dir $m)) {
@@ -1001,7 +1001,7 @@ try {
         if ($archived) { $where = "Old build moved to $archived" }
         Write-Log "Installed $($newest.Tag) into $dir. $where" $name
         $toastBody = "$($newest.Title) is installed."
-        if ($archived) { $toastBody += ' Old build moved to ARCHIVE.' }
+        if ($archived) { $toastBody += ' Old build moved to your old builds folder.' }
         Show-Notification "Lichii $label updated" $toastBody $dir
     }
     if (-not $InstallSource) { Update-AppInfo $state; Save-State $state }

@@ -17,6 +17,7 @@ A gradient **L** icon appears by the clock. Left-click it for your builds, right
 
 - Checks GitHub every 15 / 30 / 60 minutes.
 - When a new build is out, a card slides in at the bottom right: **Download & install** or **Later**. It waits while a fullscreen game is up.
+- The folder button in the panel opens the folder that holds your builds, or any folder you pick in Settings.
 - Installing moves your old build into your "old builds" folder. Saves, mods and shader cache live in Lichii's AppData folder, so they're never touched.
 - Optional **test builds**: unreleased builds the Lichii devs post on GitHub (needs a free GitHub token, set in Settings).
 - Updates itself: when a new version of this app is out, it offers **Update now**. One click, your settings stay. (Publishing an update = changing `VERSION` in this repo.)

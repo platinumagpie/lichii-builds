@@ -15,7 +15,9 @@ Setup (once)
    - turn on the builds you want (Frizti, Main, or any other Lichii fork)
    - "Change" picks where each one lives. Already have Lichii? Pick that
      folder and the first check offers the newest build for it.
-   - pick where old builds go, and how often to check
+   - pick where old builds go, which folder the panel's folder button
+     opens (Automatic = the folder that holds your builds), and how often
+     to check
 4. Save and start. A gradient "L" icon appears by the clock. If you don't
    see it, click the ^ arrow next to the clock and drag it onto the taskbar.
 

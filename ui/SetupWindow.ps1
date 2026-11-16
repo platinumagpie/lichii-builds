@@ -38,6 +38,23 @@ function Sw-Inside([string]$Child, [string]$Parent) {
     return ($c.StartsWith($p + '\', [StringComparison]::OrdinalIgnoreCase) -or $c.StartsWith($p + '/', [StringComparison]::OrdinalIgnoreCase))
 }
 
+# Where the panel's folder button goes when no folder was picked for it: the deepest
+# folder that holds every build folder (...\Games\Lichii Frizti + ...\Games\Other\Lichii Main
+# -> ...\Games). Builds on different drives share nothing, so the first build's parent is used.
+function Get-AutoShortcutFolder([string[]]$Folders) {
+    $parents = @($Folders | Where-Object { $_ } | ForEach-Object { Split-Path -Parent ([string]$_).TrimEnd('\', '/') } | Where-Object { $_ })
+    if ($parents.Count -eq 0) { return $null }
+    $common = $parents[0]
+    foreach ($p in $parents) {
+        while ($common -and -not (Sw-Inside $p $common)) {
+            $up = Split-Path -Parent $common
+            if (-not $up -or $up -eq $common) { $common = $null } else { $common = $up }
+        }
+    }
+    if (-not $common) { $common = $parents[0] }
+    return $common
+}
+
 function Sw-HasLichii([string]$Folder) {
     foreach ($n in 'lichii.exe', 'eglantine.exe') { if (Test-Path -LiteralPath (Join-Path $Folder $n) -PathType Leaf) { return $true } }
     return $false
@@ -68,6 +85,7 @@ function Get-SetupModel {
         Archive = (Join-Path $base 'Old builds')
         StartWithWindows = $true
         Token = ''
+        Shortcut = ''   # folder button target; '' = automatic
         Rows = @{
             frizti = @{ Name = 'frizti'; Label = 'Frizti'; Repo = 'Frizti/Fritchii';    Enabled = $true;  Folder = (Join-Path $base 'Lichii Frizti'); Test = 'off' }
             main   = @{ Name = 'main';   Label = 'Main';   Repo = 'zortos293/Lichii'; Enabled = $true;  Folder = (Join-Path $base 'Lichii Main'); Test = 'off' }
@@ -82,6 +100,7 @@ function Get-SetupModel {
             if ($c.CheckEveryMinutes) { $m.Interval = [int]$c.CheckEveryMinutes }
             if ($c.ArchiveFolder) { $m.Archive = Sw-Resolve $c.ArchiveFolder }
             if ($c.GitHubToken) { $m.Token = [string]$c.GitHubToken }
+            if ($c.ShortcutFolder) { $m.Shortcut = Sw-Resolve ([string]$c.ShortcutFolder) }
             $m.StartWithWindows = Test-StartWithWindows
             $m.Rows.frizti.Enabled = $false
             $m.Rows.main.Enabled = $false
@@ -139,6 +158,7 @@ function New-ConfigFromModel([hashtable]$M) {
     $cfg['CheckEveryMinutes'] = [int]$M.Interval
     $cfg['ArchiveFolder'] = Sw-ToSetting $M.Archive
     $cfg['GitHubToken'] = ([string]$M.Token).Trim()
+    $cfg['ShortcutFolder'] = $(if ($M.Shortcut) { Sw-ToSetting $M.Shortcut } else { '' })
     if (-not $cfg.Contains('AppRepo')) { $cfg['AppRepo'] = $SwDefaultAppRepo }
 
     $sources = @()
@@ -186,7 +206,8 @@ function Save-SetupModel([hashtable]$M) {
     Set-Content -LiteralPath $tmp -Value $json -Encoding UTF8
     Move-Item -LiteralPath $tmp -Destination $ConfigPath -Force
     try { Set-StartWithWindows ([bool]$M.StartWithWindows) } catch { Write-TrayLog "Start with Windows: $($_.Exception.Message)" }
-    Write-TrayLog ('Settings saved: ' + (($M.Rows.Values | Where-Object { $_.Enabled } | ForEach-Object { '{0} -> {1}' -f $_.Repo, $_.Folder }) -join '; ') + "; old builds -> $($M.Archive); every $($M.Interval) min")
+    $btn = $(if ($M.Shortcut) { $M.Shortcut } else { 'automatic' })
+    Write-TrayLog ('Settings saved: ' + (($M.Rows.Values | Where-Object { $_.Enabled } | ForEach-Object { '{0} -> {1}' -f $_.Repo, $_.Folder }) -join '; ') + "; old builds -> $($M.Archive); folder button -> $btn; every $($M.Interval) min")
 }
 
 function Sw-PickFolder($Window, [string]$Title, [string]$Start) {
@@ -211,7 +232,8 @@ function Initialize-SetupWindow([switch]$FirstRun) {
                    'UseCustom', 'CustomRow', 'CustomRepo', 'CustomPath', 'CustomChange', 'ArchivePath', 'ArchiveChange',
                    'Every15', 'Every30', 'Every60', 'StartWithWindows', 'ErrorBox', 'ErrorText', 'CancelBtn', 'SaveBtn', 'SaveLabel',
                    'Token', 'TokenLink', 'FriztiTests', 'MainTests', 'CustomTests', 'FriztiTRel', 'FriztiTMain', 'FriztiTAll',
-                   'MainTRel', 'MainTMain', 'MainTAll', 'CustomTRel', 'CustomTMain', 'CustomTAll') {
+                   'MainTRel', 'MainTMain', 'MainTAll', 'CustomTRel', 'CustomTMain', 'CustomTAll',
+                   'ShortcutPath', 'ShortcutChange', 'ShortcutAuto') {
         $E[$n] = $w.FindName($n)
     }
     $M = Get-SetupModel
@@ -250,8 +272,28 @@ function Initialize-SetupWindow([switch]$FirstRun) {
         $E2.FriztiTests.IsEnabled = [bool]$E2.UseFrizti.IsChecked; $E2.FriztiTests.Opacity = $(if ($E2.UseFrizti.IsChecked) { 1 } else { 0.4 })
         $E2.MainTests.IsEnabled = [bool]$E2.UseMain.IsChecked;     $E2.MainTests.Opacity = $(if ($E2.UseMain.IsChecked) { 1 } else { 0.4 })
     }
-    foreach ($t in @($E.UseFrizti, $E.UseMain, $E.UseCustom)) { $t.Add_Checked($sync); $t.Add_Unchecked($sync) }
+    # folder button row: a picked folder, or "Automatic" + the folder that holds the builds turned on right now
+    $script:SwShowShortcut = {
+        $M3 = $script:Sw.Model; $E3 = $script:Sw.El
+        if ($M3.Shortcut) {
+            $E3.ShortcutPath.Text = $M3.Shortcut
+            $E3.ShortcutPath.ToolTip = $M3.Shortcut
+            $E3.ShortcutAuto.Visibility = 'Visible'
+        } else {
+            $on = @()
+            if ($E3.UseFrizti.IsChecked) { $on += $M3.Rows.frizti.Folder }
+            if ($E3.UseMain.IsChecked) { $on += $M3.Rows.main.Folder }
+            if ($E3.UseCustom.IsChecked) { $on += $M3.Rows.custom.Folder }
+            if ($on.Count -eq 0) { $on = @($M3.Rows.frizti.Folder, $M3.Rows.main.Folder) }
+            $auto = Get-AutoShortcutFolder $on
+            $E3.ShortcutPath.Text = "Automatic: $auto"
+            $E3.ShortcutPath.ToolTip = "The folder that holds your builds ($auto)"
+            $E3.ShortcutAuto.Visibility = 'Collapsed'
+        }
+    }
+    foreach ($t in @($E.UseFrizti, $E.UseMain, $E.UseCustom)) { $t.Add_Checked($sync); $t.Add_Unchecked($sync); $t.Add_Checked($script:SwShowShortcut); $t.Add_Unchecked($script:SwShowShortcut) }
     & $sync
+    & $script:SwShowShortcut
 
     $E.CustomRepo.Add_GotFocus({ if ($script:Sw.El.CustomRepo.Text -eq $SwPlaceholder) { $script:Sw.El.CustomRepo.Text = '' } })
     $E.CustomRepo.Add_LostFocus({ if (-not $script:Sw.El.CustomRepo.Text.Trim()) { $script:Sw.El.CustomRepo.Text = $SwPlaceholder } })
@@ -268,6 +310,7 @@ function Initialize-SetupWindow([switch]$FirstRun) {
             $f = Sw-BuildFolderFor $p $label
             $r.Folder = $f
             $script:Sw.El[('{0}Path' -f (Get-Culture).TextInfo.ToTitleCase($key))].Text = $f
+            & $script:SwShowShortcut
         }
     }
     $E.FriztiChange.Add_Click($pickBuild); $E.MainChange.Add_Click($pickBuild); $E.CustomChange.Add_Click($pickBuild)
@@ -279,6 +322,18 @@ function Initialize-SetupWindow([switch]$FirstRun) {
             $script:Sw.El.ArchivePath.Text = $p
         }
     })
+    $E.ShortcutChange.Add_Click({
+        $start = $script:Sw.Model.Shortcut
+        if (-not $start) { $start = ($script:Sw.El.ShortcutPath.Text -replace '^Automatic: ', '') }
+        $p = Sw-PickFolder $script:Sw.Window 'Which folder should the folder button open?' $start
+        if ($p) {
+            $q = [IO.Path]::GetFullPath($p)
+            if ($q.Length -gt ([IO.Path]::GetPathRoot($q)).Length) { $q = $q.TrimEnd('\', '/') }   # keep C:\ as C:\
+            $script:Sw.Model.Shortcut = $q
+            & $script:SwShowShortcut
+        }
+    })
+    $E.ShortcutAuto.Add_Click({ $script:Sw.Model.Shortcut = ''; & $script:SwShowShortcut })
 
     $E.TitleBar.Add_MouseLeftButtonDown({ try { $script:Sw.Window.DragMove() } catch {} })
     $E.CloseBtn.Add_Click({ $script:Sw.Window.Close() })

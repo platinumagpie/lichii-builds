@@ -343,6 +343,9 @@ function Read-Config {
         $list += [pscustomobject]@{ Name = [string]$s.Name; Label = $label; Repo = [string]$s.Repo; Folder = (Resolve-Setting $s.InstallFolder) }
     }
     $script:Sources = $list
+    $script:ShortcutFolder = $null
+    try { $script:ShortcutFolder = Resolve-Setting ([string]$c.ShortcutFolder) } catch {}
+    Update-FolderButton
 }
 
 function Read-State {
@@ -552,7 +555,7 @@ function Complete-Child([string]$Kind, [string]$Name, [int]$Code) {
         if ($Code -eq 0) {
             Write-TrayLog "Installed $nice"
             $meta = 'Saves, mods and shader cache were not touched.'
-            $body = 'The old build is in ARCHIVE.'
+            $body = 'The old build is in your old builds folder.'
             if (-not (Get-S $Name 'ArchivedTo')) { $body = 'Fresh install.' }
             Show-Toast @{ Kind = 'done'; Source = $Name; Kicker = 'INSTALLED'; Title = "$nice is ready"; Body = $body; Meta = $meta
                           Primary = 'Open folder'; OnPrimary = 'openfolder'; Color = $Palette.Green; AutoHide = 12 }
@@ -605,13 +608,35 @@ function Start-Anim($Target, $Prop, [double]$From, [double]$To, [int]$Ms) {
 
 function Open-Url([string]$Url) { if ($Url) { try { Start-Process $Url } catch {} } }
 function Open-Log { try { Start-Process notepad.exe ('"{0}"' -f $LogPath) } catch {} }
+# What the panel's folder button opens: the folder picked in Settings (ShortcutFolder),
+# otherwise the folder that holds all the build folders.
 function Get-BuildsRoot {
-    if ($script:Sources.Count -gt 0 -and $script:Sources[0].Folder) { return (Split-Path -Parent $script:Sources[0].Folder) }
+    if ($script:ShortcutFolder) { return $script:ShortcutFolder }
+    $auto = Get-AutoShortcutFolder @($script:Sources | ForEach-Object { $_.Folder })
+    if ($auto) { return $auto }
     return $ScriptDir
+}
+function Get-BuildsRootName {
+    $root = Get-BuildsRoot
+    $name = Split-Path -Leaf $root
+    if (-not $name) { $name = $root }
+    return $name
+}
+function Update-FolderButton {
+    if (-not $script:F -or -not $script:F.FolderLabel) { return }
+    try {
+        $script:F.FolderLabel.Text = Get-BuildsRootName
+        $script:F.BtnFolder.ToolTip = 'Open ' + (Get-BuildsRoot) + "`n(change it in Settings)"
+    } catch {}
 }
 function Open-Folder([string]$Path) {
     if (-not $Path) { $Path = Get-BuildsRoot }
-    if (-not (Test-Path -LiteralPath $Path)) { $Path = Split-Path -Parent $Path }
+    while ($Path -and -not (Test-Path -LiteralPath $Path)) {   # not made yet: open the nearest folder that exists
+        $up = Split-Path -Parent $Path
+        if ($up -eq $Path) { break }
+        $Path = $up
+    }
+    if (-not $Path) { return }
     try { Start-Process explorer.exe ('"{0}"' -f $Path) } catch {}
 }
 
@@ -704,7 +729,7 @@ function Get-CardTokens($Src) {
         $note = 'Last install failed: ' + ($res -replace '^install failed:\s*', '') + " Your build wasn't changed."
         $noteFg = $Palette.Red; $noteBg = '#14FF99A4'; $glyph = [string][char]0xE7BA
     } elseif ($res -like '*running from the old folder*') {
-        $note = 'Lichii is running from the old folder. Close it and this build moves to Other builds on the next check.'
+        $note = 'Lichii is running from the old folder. Close it and this build moves to its new folder on the next check.'
         $noteFg = $Palette.Orange; $noteBg = '#14FFB454'
     } elseif ($res -like 'waiting*') {
         $note = 'Close Lichii to install this build.'
@@ -760,8 +785,8 @@ function New-Flyout {
     $w.Add_Deactivated({ Hide-Flyout })
     $w.Add_KeyDown({ param($s, $e) if ($e.Key -eq [System.Windows.Input.Key]::Escape) { Hide-Flyout } })
     try { [System.Windows.Forms.Integration.ElementHost]::EnableModelessKeyboardInterop($w) } catch {}
-    $script:F.FolderLabel.Text = Split-Path -Leaf (Get-BuildsRoot)
     $script:Flyout = $w
+    Update-FolderButton
 }
 
 function Set-Spin([bool]$On) {
@@ -1040,7 +1065,7 @@ function Show-ProgressToast([string]$Name) {
     $nice = Get-Nice $Name (Get-S $Name 'LatestTitle')
     [void](Show-Toast @{
         Kind = 'progress'; Source = $Name; Kicker = 'INSTALLING'; Title = "Installing $nice"
-        Body = 'Your current build moves to ARCHIVE when this is done.'
+        Body = 'Your current build moves to your old builds folder when this is done.'
         Color = $Palette.Blue; AutoHide = 0
     })
 }
@@ -1100,10 +1125,10 @@ function Save-UiPreview {
                                 Primary = 'Download & install'; Secondary = 'Later'; Color = $Palette.Orange }
             Save-OffscreenWindow $script:ToastWin (Join-Path $dir 'card-new-build.png')
             Set-ToastContent @{ Kind = 'progress'; Source = $n; Kicker = 'INSTALLING'; Title = 'Installing Frizti v4'
-                                Body = 'Your current build moves to ARCHIVE when this is done.'; Color = $Palette.Blue }
+                                Body = 'Your current build moves to your old builds folder when this is done.'; Color = $Palette.Blue }
             $script:ToastEl.Bar.Value = 62; $script:ToastEl.PhaseText.Text = 'Downloading' + $Dots; $script:ToastEl.PctText.Text = '49.5 / 79.8 MB' + $Dot + '62%'
             Save-OffscreenWindow $script:ToastWin (Join-Path $dir 'card-installing.png')
-            Set-ToastContent @{ Kind = 'done'; Source = $n; Kicker = 'INSTALLED'; Title = 'Frizti v4 is ready'; Body = 'The old build is in ARCHIVE.'
+            Set-ToastContent @{ Kind = 'done'; Source = $n; Kicker = 'INSTALLED'; Title = 'Frizti v4 is ready'; Body = 'The old build is in your old builds folder.'
                                 Meta = 'Saves, mods and shader cache were not touched.'; Primary = 'Open folder'; Color = $Palette.Green }
             Save-OffscreenWindow $script:ToastWin (Join-Path $dir 'card-done.png')
             $script:ToastWin.ShowActivated = $false
@@ -1142,7 +1167,7 @@ function Build-Menu {
         [void](Add-MenuItem ('Download {0}' -f (Get-Nice $src.Name (Get-S $src.Name 'LatestTitle'))) { param($s, $e) Confirm-Install ([string]$s.Tag) } $src.Name (-not $script:Proc) $false 'accent')
     }
     [void](Add-MenuItem 'Check now' { param($s, $e) Start-Check -Manual } '' (-not $script:Proc))
-    [void](Add-MenuItem ('Open {0} folder' -f (Split-Path -Leaf (Get-BuildsRoot))) { param($s, $e) Open-Folder $null })
+    [void](Add-MenuItem ('Open {0} folder' -f (Get-BuildsRootName)) { param($s, $e) Open-Folder $null })
     [void](Add-MenuItem 'Open log' { param($s, $e) Open-Log })
     [void](Add-MenuItem 'Settings...' { param($s, $e) Open-Settings })
     Add-MenuSeparator

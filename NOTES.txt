@@ -1,1 +1,1 @@
-Test update: checks that one-click updates work. Nothing else changed.
+New: pick which folder the panel's folder button opens (Settings > Folders). By default it opens the folder that holds your builds. Messages now say "old builds folder" instead of a fixed folder name.

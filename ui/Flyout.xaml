@@ -77,10 +77,11 @@
                             <TextBlock Text="Check now" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="BtnFolder" Style="{DynamicResource GhostButton}" ToolTip="Open the ZELDAOOT folder">
+                    <Button x:Name="BtnFolder" Style="{DynamicResource GhostButton}" ToolTip="Open your builds folder">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE838;" FontFamily="{DynamicResource Icons}" FontSize="13" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="FolderLabel" Text="ZELDAOOT" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="FolderLabel" Text="Builds" Margin="8,0,0,0" VerticalAlignment="Center"
+                                       MaxWidth="150" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
